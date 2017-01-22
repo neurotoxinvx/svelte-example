@@ -1,0 +1,109 @@
+<!-- 入口文件 -->
+
+<h1>SVELTE</h1>
+
+<p>SVELTE 是一个非常酷的编译型框架，它不像 Vue、React 需要依赖一个 Runtime ，用它来开发 SDK 最为适合，但是如果你要开发的是一个中大型应用，它的性能会低于 Vue 、 React 。</p>
+
+<section>
+  <h3>模板渲染</h3>
+  <Tpl></Tpl>
+</section>
+
+<section>
+  <h3>IF...ELSE</h3>
+  <IFELSE></IFELSE>
+</section>
+
+<section>
+  <h3>列表渲染</h3>
+  <List></List>
+</section>
+
+<section>
+  <h3>双向绑定</h3>
+  <TwoWay></TwoWay>
+</section>
+
+<section>
+  <h3>事件绑定</h3>
+  <Events></Events>
+</section>
+
+<section>
+  <h3>监听数据变化</h3>
+  <Watch></Watch>
+</section>
+
+<section>
+  <h3>计算属性</h3>
+  <Compute></Compute>
+</section>
+
+<section>
+  <h3>Props 传值到子组件</h3>
+  <Props></Props>
+</section>
+
+<section>
+  <h3>REFs</h3>
+  <REFs></REFs>
+</section>
+
+<section>
+  <h3>Emit</h3>
+  <Emit></Emit>
+</section>
+
+<p>查看更多文档请访问 <a target="_blank" href="https://svelte.technology/">SVELTE</a></p>
+
+<style>
+  h1 {
+    text-align: center;
+    line-height: 50px;
+  }
+
+  h3 {
+    line-height: 25px;
+    margin: 10px 0;
+  }
+
+  p {
+    line-height: 25px;
+  }
+
+  section {
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid #CCC;
+    background-color: #eee;
+    border-radius: 4px;
+  }
+</style>
+
+<script>
+  import Tpl from './Template/Template';
+  import IFELSE from './IFELSE/IFELSE';
+  import List from './List/List';
+  import TwoWay from './TwoWay/TwoWay';
+  import Events from './Events/Events';
+  import Watch from './Watch/Watch';
+  import Compute from './Computed/Computed';
+  import Props from './Props/Props';
+  import REFs from './REFs/REFs';
+  import Emit from './Emit/Emit';
+
+  export default {
+    components: {
+      Tpl,
+      IFELSE,
+      List,
+      TwoWay,
+      Events,
+      Watch,
+      Compute,
+      Props,
+      REFs,
+      Emit
+    }
+  }
+</script>

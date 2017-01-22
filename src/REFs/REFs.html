@@ -1,0 +1,27 @@
+<!-- REFs -->
+
+<div id="refs">
+  <Inner ref:inner></Inner>
+  <button on:click="triggerInner()">click me</button>
+</div>
+
+<script>
+  import Inner from './Inner';
+
+  export default {
+    data() {
+      return {
+        data: 'REFs Inner'
+      }
+    },
+    methods: {
+      triggerInner() {
+        const inner = this.refs.inner;
+        inner.change();
+      }
+    },
+    components: {
+      Inner
+    }
+  }
+</script>

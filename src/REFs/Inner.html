@@ -1,0 +1,20 @@
+<!-- REFs Inner -->
+
+<p>{{ data }}</p>
+
+<script>
+  export default {
+    data() {
+      return {
+        data: 'REFs Inner'
+      }
+    },
+    methods: {
+      change() {
+        this.set({
+          data: Math.random()
+        })
+      }
+    }
+  }
+</script>

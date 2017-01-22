@@ -1,0 +1,26 @@
+<!-- 事件绑定 -->
+
+<p>{{data}}</p>
+<button on:click="add()">click me</button>
+
+<style>
+
+</style>
+
+<script>
+  export default {
+    data() {
+      return {
+        data: 'DiDi'
+      }
+    },
+    methods: {
+      add() {
+        let _data = this.get('data');
+        this.set({
+          data: _data + 'Di'
+        })
+      }
+    }
+  }
+</script>

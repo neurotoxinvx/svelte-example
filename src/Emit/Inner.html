@@ -1,0 +1,15 @@
+<!-- 派发组件内自定义事件 -->
+
+<script>
+  export default {
+    onrender() {
+      let num = 0;
+
+      setInterval(() => {
+        this.fire('Bomb', {
+          thing: num += 1
+        })
+      }, 1000);
+    }
+  }
+</script>

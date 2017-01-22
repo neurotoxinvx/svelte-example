@@ -1,0 +1,38 @@
+<!-- IF ELSE 渲染 -->
+
+{{#if type}}
+<div>BLOCK TRUE</div>
+{{else}}
+<div>BLOCK FALSE</div>
+{{/if}}
+
+<button on:click="switchFirst(type)">switch</button>
+
+<style>
+  div {
+    font-size: 14px;
+  }
+
+  button {
+    margin-top: 10px;
+  }
+</style>
+
+<script>
+  export default {
+    data() {
+      return {
+        type: true
+      }
+    },
+    methods: {
+      switchFirst(type) {
+        type = !type;
+
+        this.set({
+          type: type
+        })
+      }
+    }
+  }
+</script>

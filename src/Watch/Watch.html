@@ -1,0 +1,36 @@
+<!-- 事件绑定 -->
+
+<p>打开控制台查看</p>
+<p>{{data}}</p>
+<button on:click="add()">click me</button>
+
+<style>
+
+</style>
+
+<script>
+  export default {
+    data() {
+      return {
+        data: 'DiDi'
+      }
+    },
+    methods: {
+      add() {
+        let _data = this.get('data');
+        this.set({
+          data: _data + 'Di'
+        })
+      }
+    },
+    onrender() {
+      // 此处注意，监听时会触发一次回调函数，使用时请进行第一次判断
+
+      const observer = this.observe('data', data => {
+        console.log('新的数据是' + data);
+      });
+
+      // observer.cancel();
+    }
+  }
+</script>

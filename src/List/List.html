@@ -1,0 +1,38 @@
+<!-- 列表渲染 -->
+
+<div>
+  <ul>
+    {{#each cats as cat}}
+      <li>{{cat.name}}</li>
+    {{/each}}
+  </ul>
+</div>
+
+<style>
+  ul li {
+    line-height: 25px;
+  }
+</style>
+
+<script>
+  export default {
+    data() {
+      return {
+        cats: [
+          {
+            name: '白猫'
+          },
+          {
+            name: '黑猫'
+          },
+          {
+            name: '蓝猫'
+          },
+          {
+            name: '黄猫'
+          }
+        ]
+      }
+    }
+  }
+</script>

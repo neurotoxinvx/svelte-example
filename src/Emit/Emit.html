@@ -1,0 +1,29 @@
+<!-- 监听组件内自定义事件 -->
+
+<div>
+  {{ thing }}
+</div>
+
+<Inner on:Bomb="action(event.thing)"></Inner>
+
+<script>
+  import Inner from './Inner';
+
+  export default {
+    data() {
+      return {
+        thing: 'Nothing'
+      }
+    },
+    methods: {
+      action(thing) {
+        this.set({
+          thing: thing
+        });
+      }
+    },
+    components: {
+      Inner
+    }
+  }
+</script>

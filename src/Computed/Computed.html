@@ -1,0 +1,20 @@
+<!-- 计算属性 -->
+
+<p>
+  现在时分, 北京时间 {{ hour }} 点  {{ minutes }} 分 {{ seconds }} 秒
+</p>
+
+<script>
+  export default {
+    data() {
+      return {
+        date: new Date()
+      }
+    },
+    computed: {
+      hour: date => date.getHours(),
+      minutes: date => date.getMinutes(),
+      seconds: date => date.getSeconds()
+    }
+  }
+</script>

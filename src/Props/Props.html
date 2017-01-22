@@ -1,0 +1,25 @@
+<Inner name="Neurotoxin" bind:count></Inner>
+
+<button on:click="plus(count)">click me</button>
+
+<script>
+  import Inner from './Inner';
+
+  export default {
+    data() {
+      return {
+        count: 0
+      }
+    },
+    methods: {
+      plus(count) {
+        this.set({
+          count: count + 1
+        })
+      }
+    },
+    components: {
+      Inner
+    }
+  }
+</script>

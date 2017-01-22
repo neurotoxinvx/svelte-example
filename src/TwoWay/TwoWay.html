@@ -1,0 +1,14 @@
+<!-- 双向绑定 Demo -->
+
+<input type="text" bind:value="name" placeholder="ente your name">
+<p>Hello {{name || 'stranger'}}!</p>
+
+<script>
+  export default {
+    data() {
+      return {
+        name: ''
+      }
+    }
+  }
+</script>
