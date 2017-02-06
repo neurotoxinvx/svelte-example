@@ -12,7 +12,7 @@ Svelte (发音: svelt) 和上面的框架有一个关键的区别：Svelte 不�
 
 ### 快速开始
 
-在这里我为大家提供了一个 Example ，可以直接访问地址  [Svelte-Example](https://github.com/neurotoxinvx/svelte-example) 查看。
+在这里我为大家提供了一个 Example ，可以直接访问地址  [Svelte-Example](https://neurotoxinvx.github.io/svelte-example/) 查看。
 
 安装 && 启动
 
