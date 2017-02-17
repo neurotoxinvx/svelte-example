@@ -14,6 +14,6 @@ let webpackConfig = require('../config/webpack.dev.conf.js');
 
 webpack(webpackConfig, (err, stats) => {
   let uri = path.join(__dirname, '../demo/index.html');
-  opn(uri);
+  // opn(uri);
   spinner.stop();
 });

@@ -19,7 +19,7 @@ Svelte (发音: svelt) 和上面的框架有一个关键的区别：Svelte 不�
 ```shell
 git clone https://github.com/neurotoxinvx/svelte-example.git
 cd svelte-example
-npm installcd svelte-example
+npm install
 npm run dev
 ```
 

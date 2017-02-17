@@ -33,16 +33,18 @@
 /******/ 	// expose the module cache
 /******/ 	__webpack_require__.c = installedModules;
 
-/******/ 	// identity function for calling harmory imports with the correct context
+/******/ 	// identity function for calling harmony imports with the correct context
 /******/ 	__webpack_require__.i = function(value) { return value; };
 
-/******/ 	// define getter function for harmory exports
+/******/ 	// define getter function for harmony exports
 /******/ 	__webpack_require__.d = function(exports, name, getter) {
-/******/ 		Object.defineProperty(exports, name, {
-/******/ 			configurable: false,
-/******/ 			enumerable: true,
-/******/ 			get: getter
-/******/ 		});
+/******/ 		if(!__webpack_require__.o(exports, name)) {
+/******/ 			Object.defineProperty(exports, name, {
+/******/ 				configurable: false,
+/******/ 				enumerable: true,
+/******/ 				get: getter
+/******/ 			});
+/******/ 		}
 /******/ 	};
 
 /******/ 	// getDefaultExport function for compatibility with non-harmony modules
@@ -66,9 +68,10 @@
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__App__ = __webpack_require__(1);
 
 
@@ -76,9 +79,9 @@ var app = new __WEBPACK_IMPORTED_MODULE_0__App__["a" /* default */]({
   target: document.querySelector('#app')
 });
 
-/***/ },
+/***/ }),
 /* 1 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Template_Template__ = __webpack_require__(12);
@@ -425,10 +428,7 @@ function SvelteComponent(options) {
 	this._fragment = renderMainFragment(this._state, this);
 	if (options.target) this._fragment.mount(options.target, null);
 
-	while (this._renderHooks.length) {
-		var hook = this._renderHooks.pop();
-		hook.fn.call(hook.context);
-	}
+	this._flush();
 }
 
 SvelteComponent.prototype.get = function get(key) {
@@ -476,6 +476,20 @@ SvelteComponent.prototype.on = function on(eventName, handler) {
 };
 
 SvelteComponent.prototype.set = function set(newState) {
+	this._set(newState);
+	(this._root || this)._flush();
+};
+
+SvelteComponent.prototype._flush = function _flush() {
+	if (!this._renderHooks) return;
+
+	while (this._renderHooks.length) {
+		var hook = this._renderHooks.pop();
+		hook.fn.call(hook.context);
+	}
+};
+
+SvelteComponent.prototype._set = function _set(newState) {
 	var oldState = this._state;
 	this._state = Object.assign({}, oldState, newState);
 
@@ -483,10 +497,7 @@ SvelteComponent.prototype.set = function set(newState) {
 	if (this._fragment) this._fragment.update(newState, this._state);
 	dispatchObservers(this, this._observers.post, newState, oldState);
 
-	while (this._renderHooks.length) {
-		var hook = this._renderHooks.pop();
-		hook.fn.call(hook.context);
-	}
+	this._flush();
 };
 
 SvelteComponent.prototype.teardown = function teardown(detach) {
@@ -547,25 +558,25 @@ function appendNode(node, target) {
 
 function noop() {}
 
-/* harmony default export */ exports["a"] = SvelteComponent;
+/* harmony default export */ __webpack_exports__["a"] = SvelteComponent;
 
-/***/ },
+/***/ }),
 /* 2 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-function applyComputations(state, newState, oldState) {
-	if ('date' in newState && _typeof(state.date) === 'object' || state.date !== oldState.date) {
+function applyComputations(state, newState, oldState, isInitial) {
+	if (isInitial || 'date' in newState && _typeof(state.date) === 'object' || state.date !== oldState.date) {
 		state.hour = newState.hour = template.computed.hour(state.date);
 	}
 
-	if ('date' in newState && _typeof(state.date) === 'object' || state.date !== oldState.date) {
+	if (isInitial || 'date' in newState && _typeof(state.date) === 'object' || state.date !== oldState.date) {
 		state.minutes = newState.minutes = template.computed.minutes(state.date);
 	}
 
-	if ('date' in newState && _typeof(state.date) === 'object' || state.date !== oldState.date) {
+	if (isInitial || 'date' in newState && _typeof(state.date) === 'object' || state.date !== oldState.date) {
 		state.seconds = newState.seconds = template.computed.seconds(state.date);
 	}
 }
@@ -588,6 +599,15 @@ var template = function () {
 			seconds: function seconds(date) {
 				return date.getSeconds();
 			}
+		},
+		onrender: function onrender() {
+			var _this = this;
+
+			window.setInterval(function () {
+				_this.set({
+					date: new Date()
+				});
+			}, 1000);
 		}
 	};
 }();
@@ -635,7 +655,7 @@ function SvelteComponent(options) {
 	options = options || {};
 
 	this._state = Object.assign(template.data(), options.data);
-	applyComputations(this._state, this._state, {});
+	applyComputations(this._state, this._state, {}, true);
 
 	this._observers = {
 		pre: Object.create(null),
@@ -649,6 +669,12 @@ function SvelteComponent(options) {
 
 	this._fragment = renderMainFragment(this._state, this);
 	if (options.target) this._fragment.mount(options.target, null);
+
+	if (options._root) {
+		options._root._renderHooks.push({ fn: template.onrender, context: this });
+	} else {
+		template.onrender.call(this);
+	}
 }
 
 SvelteComponent.prototype.get = function get(key) {
@@ -696,9 +722,23 @@ SvelteComponent.prototype.on = function on(eventName, handler) {
 };
 
 SvelteComponent.prototype.set = function set(newState) {
+	this._set(newState);
+	(this._root || this)._flush();
+};
+
+SvelteComponent.prototype._flush = function _flush() {
+	if (!this._renderHooks) return;
+
+	while (this._renderHooks.length) {
+		var hook = this._renderHooks.pop();
+		hook.fn.call(hook.context);
+	}
+};
+
+SvelteComponent.prototype._set = function _set(newState) {
 	var oldState = this._state;
 	this._state = Object.assign({}, oldState, newState);
-	applyComputations(this._state, newState, oldState);
+	applyComputations(this._state, newState, oldState, false);
 
 	dispatchObservers(this, this._observers.pre, newState, oldState);
 	if (this._fragment) this._fragment.update(newState, this._state);
@@ -757,11 +797,11 @@ function appendNode(node, target) {
 	target.appendChild(node);
 }
 
-/* harmony default export */ exports["a"] = SvelteComponent;
+/* harmony default export */ __webpack_exports__["a"] = SvelteComponent;
 
-/***/ },
+/***/ }),
 /* 3 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Inner__ = __webpack_require__(4);
@@ -852,10 +892,7 @@ function SvelteComponent(options) {
 	this._fragment = renderMainFragment(this._state, this);
 	if (options.target) this._fragment.mount(options.target, null);
 
-	while (this._renderHooks.length) {
-		var hook = this._renderHooks.pop();
-		hook.fn.call(hook.context);
-	}
+	this._flush();
 }
 
 SvelteComponent.prototype = template.methods;
@@ -905,6 +942,20 @@ SvelteComponent.prototype.on = function on(eventName, handler) {
 };
 
 SvelteComponent.prototype.set = function set(newState) {
+	this._set(newState);
+	(this._root || this)._flush();
+};
+
+SvelteComponent.prototype._flush = function _flush() {
+	if (!this._renderHooks) return;
+
+	while (this._renderHooks.length) {
+		var hook = this._renderHooks.pop();
+		hook.fn.call(hook.context);
+	}
+};
+
+SvelteComponent.prototype._set = function _set(newState) {
 	var oldState = this._state;
 	this._state = Object.assign({}, oldState, newState);
 
@@ -912,10 +963,7 @@ SvelteComponent.prototype.set = function set(newState) {
 	if (this._fragment) this._fragment.update(newState, this._state);
 	dispatchObservers(this, this._observers.post, newState, oldState);
 
-	while (this._renderHooks.length) {
-		var hook = this._renderHooks.pop();
-		hook.fn.call(hook.context);
-	}
+	this._flush();
 };
 
 SvelteComponent.prototype.teardown = function teardown(detach) {
@@ -970,159 +1018,173 @@ function appendNode(node, target) {
 	target.appendChild(node);
 }
 
-/* harmony default export */ exports["a"] = SvelteComponent;
+/* harmony default export */ __webpack_exports__["a"] = SvelteComponent;
 
-/***/ },
+/***/ }),
 /* 4 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 var template = function () {
-	return {
-		onrender: function onrender() {
-			var _this = this;
+  return {
+    onrender: function onrender() {
+      var _this = this;
 
-			var num = 0;
+      var num = 0;
 
-			setInterval(function () {
-				_this.fire('Bomb', {
-					thing: num += 1
-				});
-			}, 1000);
-		}
-	};
+      setInterval(function () {
+        _this.fire('Bomb', {
+          thing: num += 1
+        });
+      }, 1000);
+    }
+  };
 }();
 
 function renderMainFragment(root, component) {
 
-	return {
-		mount: noop,
+  return {
+    mount: noop,
 
-		update: noop,
+    update: noop,
 
-		teardown: noop
-	};
+    teardown: noop
+  };
 }
 
 function SvelteComponent(options) {
-	options = options || {};
+  options = options || {};
 
-	this._state = options.data || {};
+  this._state = options.data || {};
 
-	this._observers = {
-		pre: Object.create(null),
-		post: Object.create(null)
-	};
+  this._observers = {
+    pre: Object.create(null),
+    post: Object.create(null)
+  };
 
-	this._handlers = Object.create(null);
+  this._handlers = Object.create(null);
 
-	this._root = options._root;
-	this._yield = options._yield;
+  this._root = options._root;
+  this._yield = options._yield;
 
-	this._fragment = renderMainFragment(this._state, this);
-	if (options.target) this._fragment.mount(options.target, null);
+  this._fragment = renderMainFragment(this._state, this);
+  if (options.target) this._fragment.mount(options.target, null);
 
-	if (options._root) {
-		options._root._renderHooks.push({ fn: template.onrender, context: this });
-	} else {
-		template.onrender.call(this);
-	}
+  if (options._root) {
+    options._root._renderHooks.push({ fn: template.onrender, context: this });
+  } else {
+    template.onrender.call(this);
+  }
 }
 
 SvelteComponent.prototype.get = function get(key) {
-	return key ? this._state[key] : this._state;
+  return key ? this._state[key] : this._state;
 };
 
 SvelteComponent.prototype.fire = function fire(eventName, data) {
-	var handlers = eventName in this._handlers && this._handlers[eventName].slice();
-	if (!handlers) return;
+  var handlers = eventName in this._handlers && this._handlers[eventName].slice();
+  if (!handlers) return;
 
-	for (var i = 0; i < handlers.length; i += 1) {
-		handlers[i].call(this, data);
-	}
+  for (var i = 0; i < handlers.length; i += 1) {
+    handlers[i].call(this, data);
+  }
 };
 
 SvelteComponent.prototype.observe = function observe(key, callback, options) {
-	var group = options && options.defer ? this._observers.pre : this._observers.post;
+  var group = options && options.defer ? this._observers.pre : this._observers.post;
 
-	(group[key] || (group[key] = [])).push(callback);
+  (group[key] || (group[key] = [])).push(callback);
 
-	if (!options || options.init !== false) {
-		callback.__calling = true;
-		callback.call(this, this._state[key]);
-		callback.__calling = false;
-	}
+  if (!options || options.init !== false) {
+    callback.__calling = true;
+    callback.call(this, this._state[key]);
+    callback.__calling = false;
+  }
 
-	return {
-		cancel: function cancel() {
-			var index = group[key].indexOf(callback);
-			if (~index) group[key].splice(index, 1);
-		}
-	};
+  return {
+    cancel: function cancel() {
+      var index = group[key].indexOf(callback);
+      if (~index) group[key].splice(index, 1);
+    }
+  };
 };
 
 SvelteComponent.prototype.on = function on(eventName, handler) {
-	var handlers = this._handlers[eventName] || (this._handlers[eventName] = []);
-	handlers.push(handler);
+  var handlers = this._handlers[eventName] || (this._handlers[eventName] = []);
+  handlers.push(handler);
 
-	return {
-		cancel: function cancel() {
-			var index = handlers.indexOf(handler);
-			if (~index) handlers.splice(index, 1);
-		}
-	};
+  return {
+    cancel: function cancel() {
+      var index = handlers.indexOf(handler);
+      if (~index) handlers.splice(index, 1);
+    }
+  };
 };
 
 SvelteComponent.prototype.set = function set(newState) {
-	var oldState = this._state;
-	this._state = Object.assign({}, oldState, newState);
+  this._set(newState);
+  (this._root || this)._flush();
+};
 
-	dispatchObservers(this, this._observers.pre, newState, oldState);
-	if (this._fragment) this._fragment.update(newState, this._state);
-	dispatchObservers(this, this._observers.post, newState, oldState);
+SvelteComponent.prototype._flush = function _flush() {
+  if (!this._renderHooks) return;
+
+  while (this._renderHooks.length) {
+    var hook = this._renderHooks.pop();
+    hook.fn.call(hook.context);
+  }
+};
+
+SvelteComponent.prototype._set = function _set(newState) {
+  var oldState = this._state;
+  this._state = Object.assign({}, oldState, newState);
+
+  dispatchObservers(this, this._observers.pre, newState, oldState);
+  if (this._fragment) this._fragment.update(newState, this._state);
+  dispatchObservers(this, this._observers.post, newState, oldState);
 };
 
 SvelteComponent.prototype.teardown = function teardown(detach) {
-	this.fire('teardown');
+  this.fire('teardown');
 
-	this._fragment.teardown(detach !== false);
-	this._fragment = null;
+  this._fragment.teardown(detach !== false);
+  this._fragment = null;
 
-	this._state = {};
+  this._state = {};
 };
 
 function dispatchObservers(component, group, newState, oldState) {
-	for (var key in group) {
-		if (!(key in newState)) continue;
+  for (var key in group) {
+    if (!(key in newState)) continue;
 
-		var newValue = newState[key];
-		var oldValue = oldState[key];
+    var newValue = newState[key];
+    var oldValue = oldState[key];
 
-		if (newValue === oldValue && (typeof newValue === 'undefined' ? 'undefined' : _typeof(newValue)) !== 'object') continue;
+    if (newValue === oldValue && (typeof newValue === 'undefined' ? 'undefined' : _typeof(newValue)) !== 'object') continue;
 
-		var callbacks = group[key];
-		if (!callbacks) continue;
+    var callbacks = group[key];
+    if (!callbacks) continue;
 
-		for (var i = 0; i < callbacks.length; i += 1) {
-			var callback = callbacks[i];
-			if (callback.__calling) continue;
+    for (var i = 0; i < callbacks.length; i += 1) {
+      var callback = callbacks[i];
+      if (callback.__calling) continue;
 
-			callback.__calling = true;
-			callback.call(component, newValue, oldValue);
-			callback.__calling = false;
-		}
-	}
+      callback.__calling = true;
+      callback.call(component, newValue, oldValue);
+      callback.__calling = false;
+    }
+  }
 }
 
 function noop() {}
 
-/* harmony default export */ exports["a"] = SvelteComponent;
+/* harmony default export */ __webpack_exports__["a"] = SvelteComponent;
 
-/***/ },
+/***/ }),
 /* 5 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -1269,6 +1331,20 @@ SvelteComponent.prototype.on = function on(eventName, handler) {
 };
 
 SvelteComponent.prototype.set = function set(newState) {
+	this._set(newState);
+	(this._root || this)._flush();
+};
+
+SvelteComponent.prototype._flush = function _flush() {
+	if (!this._renderHooks) return;
+
+	while (this._renderHooks.length) {
+		var hook = this._renderHooks.pop();
+		hook.fn.call(hook.context);
+	}
+};
+
+SvelteComponent.prototype._set = function _set(newState) {
 	var oldState = this._state;
 	this._state = Object.assign({}, oldState, newState);
 
@@ -1341,11 +1417,11 @@ function removeEventListener(node, event, handler) {
 	node.removeEventListener(event, handler, false);
 }
 
-/* harmony default export */ exports["a"] = SvelteComponent;
+/* harmony default export */ __webpack_exports__["a"] = SvelteComponent;
 
-/***/ },
+/***/ }),
 /* 6 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -1381,7 +1457,7 @@ function addCss() {
 
 function renderMainFragment(root, component) {
 	var text = createText("\n\n");
-	var ifBlock_anchor = createComment("#if type");
+	var ifBlock_anchor = createComment();
 
 	function getBlock(root) {
 		if (root.type) return renderIfBlock_0;
@@ -1557,6 +1633,20 @@ SvelteComponent.prototype.on = function on(eventName, handler) {
 };
 
 SvelteComponent.prototype.set = function set(newState) {
+	this._set(newState);
+	(this._root || this)._flush();
+};
+
+SvelteComponent.prototype._flush = function _flush() {
+	if (!this._renderHooks) return;
+
+	while (this._renderHooks.length) {
+		var hook = this._renderHooks.pop();
+		hook.fn.call(hook.context);
+	}
+};
+
+SvelteComponent.prototype._set = function _set(newState) {
 	var oldState = this._state;
 	this._state = Object.assign({}, oldState, newState);
 
@@ -1623,8 +1713,8 @@ function appendNode(node, target) {
 
 function noop() {}
 
-function createComment(data) {
-	return document.createComment(data);
+function createComment() {
+	return document.createComment('');
 }
 
 function addEventListener(node, event, handler) {
@@ -1635,11 +1725,11 @@ function removeEventListener(node, event, handler) {
 	node.removeEventListener(event, handler, false);
 }
 
-/* harmony default export */ exports["a"] = SvelteComponent;
+/* harmony default export */ __webpack_exports__["a"] = SvelteComponent;
 
-/***/ },
+/***/ }),
 /* 7 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -1681,7 +1771,7 @@ function renderMainFragment(root, component) {
 	setAttribute(ul, 'svelte-2326342005', '');
 
 	appendNode(ul, div);
-	var eachBlock_anchor = createComment("#each cats");
+	var eachBlock_anchor = createComment();
 	appendNode(eachBlock_anchor, ul);
 	var eachBlock_value = root.cats;
 	var eachBlock_iterations = [];
@@ -1815,6 +1905,20 @@ SvelteComponent.prototype.on = function on(eventName, handler) {
 };
 
 SvelteComponent.prototype.set = function set(newState) {
+	this._set(newState);
+	(this._root || this)._flush();
+};
+
+SvelteComponent.prototype._flush = function _flush() {
+	if (!this._renderHooks) return;
+
+	while (this._renderHooks.length) {
+		var hook = this._renderHooks.pop();
+		hook.fn.call(hook.context);
+	}
+};
+
+SvelteComponent.prototype._set = function _set(newState) {
 	var oldState = this._state;
 	this._state = Object.assign({}, oldState, newState);
 
@@ -1879,8 +1983,8 @@ function appendNode(node, target) {
 	target.appendChild(node);
 }
 
-function createComment(data) {
-	return document.createComment(data);
+function createComment() {
+	return document.createComment('');
 }
 
 function teardownEach(iterations, detach, start) {
@@ -1889,11 +1993,11 @@ function teardownEach(iterations, detach, start) {
 	}
 }
 
-/* harmony default export */ exports["a"] = SvelteComponent;
+/* harmony default export */ __webpack_exports__["a"] = SvelteComponent;
 
-/***/ },
+/***/ }),
 /* 8 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -2011,6 +2115,20 @@ SvelteComponent.prototype.on = function on(eventName, handler) {
 };
 
 SvelteComponent.prototype.set = function set(newState) {
+	this._set(newState);
+	(this._root || this)._flush();
+};
+
+SvelteComponent.prototype._flush = function _flush() {
+	if (!this._renderHooks) return;
+
+	while (this._renderHooks.length) {
+		var hook = this._renderHooks.pop();
+		hook.fn.call(hook.context);
+	}
+};
+
+SvelteComponent.prototype._set = function _set(newState) {
 	var oldState = this._state;
 	this._state = Object.assign({}, oldState, newState);
 
@@ -2071,11 +2189,11 @@ function createText(data) {
 	return document.createTextNode(data);
 }
 
-/* harmony default export */ exports["a"] = SvelteComponent;
+/* harmony default export */ __webpack_exports__["a"] = SvelteComponent;
 
-/***/ },
+/***/ }),
 /* 9 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Inner__ = __webpack_require__(8);
@@ -2153,7 +2271,7 @@ function renderMainFragment(root, component) {
 
 		update: function update(changed, root) {
 			if (!inner_updating && 'count' in changed) {
-				inner.set({ count: root.count });
+				inner._set({ count: root.count });
 			}
 
 			button.__svelte.root = root;
@@ -2193,10 +2311,7 @@ function SvelteComponent(options) {
 	if (options.target) this._fragment.mount(options.target, null);
 	while (this._bindings.length) {
 		this._bindings.pop()();
-	}while (this._renderHooks.length) {
-		var hook = this._renderHooks.pop();
-		hook.fn.call(hook.context);
-	}
+	}this._flush();
 }
 
 SvelteComponent.prototype = template.methods;
@@ -2246,6 +2361,20 @@ SvelteComponent.prototype.on = function on(eventName, handler) {
 };
 
 SvelteComponent.prototype.set = function set(newState) {
+	this._set(newState);
+	(this._root || this)._flush();
+};
+
+SvelteComponent.prototype._flush = function _flush() {
+	if (!this._renderHooks) return;
+
+	while (this._renderHooks.length) {
+		var hook = this._renderHooks.pop();
+		hook.fn.call(hook.context);
+	}
+};
+
+SvelteComponent.prototype._set = function _set(newState) {
 	var oldState = this._state;
 	this._state = Object.assign({}, oldState, newState);
 
@@ -2255,10 +2384,7 @@ SvelteComponent.prototype.set = function set(newState) {
 
 	while (this._bindings.length) {
 		this._bindings.pop()();
-	}while (this._renderHooks.length) {
-		var hook = this._renderHooks.pop();
-		hook.fn.call(hook.context);
-	}
+	}this._flush();
 };
 
 SvelteComponent.prototype.teardown = function teardown(detach) {
@@ -2321,11 +2447,11 @@ function appendNode(node, target) {
 	target.appendChild(node);
 }
 
-/* harmony default export */ exports["a"] = SvelteComponent;
+/* harmony default export */ __webpack_exports__["a"] = SvelteComponent;
 
-/***/ },
+/***/ }),
 /* 10 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -2441,6 +2567,20 @@ SvelteComponent.prototype.on = function on(eventName, handler) {
 };
 
 SvelteComponent.prototype.set = function set(newState) {
+	this._set(newState);
+	(this._root || this)._flush();
+};
+
+SvelteComponent.prototype._flush = function _flush() {
+	if (!this._renderHooks) return;
+
+	while (this._renderHooks.length) {
+		var hook = this._renderHooks.pop();
+		hook.fn.call(hook.context);
+	}
+};
+
+SvelteComponent.prototype._set = function _set(newState) {
 	var oldState = this._state;
 	this._state = Object.assign({}, oldState, newState);
 
@@ -2501,11 +2641,11 @@ function appendNode(node, target) {
 	target.appendChild(node);
 }
 
-/* harmony default export */ exports["a"] = SvelteComponent;
+/* harmony default export */ __webpack_exports__["a"] = SvelteComponent;
 
-/***/ },
+/***/ }),
 /* 11 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Inner__ = __webpack_require__(10);
@@ -2601,10 +2741,7 @@ function SvelteComponent(options) {
 	this._fragment = renderMainFragment(this._state, this);
 	if (options.target) this._fragment.mount(options.target, null);
 
-	while (this._renderHooks.length) {
-		var hook = this._renderHooks.pop();
-		hook.fn.call(hook.context);
-	}
+	this._flush();
 }
 
 SvelteComponent.prototype = template.methods;
@@ -2654,6 +2791,20 @@ SvelteComponent.prototype.on = function on(eventName, handler) {
 };
 
 SvelteComponent.prototype.set = function set(newState) {
+	this._set(newState);
+	(this._root || this)._flush();
+};
+
+SvelteComponent.prototype._flush = function _flush() {
+	if (!this._renderHooks) return;
+
+	while (this._renderHooks.length) {
+		var hook = this._renderHooks.pop();
+		hook.fn.call(hook.context);
+	}
+};
+
+SvelteComponent.prototype._set = function _set(newState) {
 	var oldState = this._state;
 	this._state = Object.assign({}, oldState, newState);
 
@@ -2661,10 +2812,7 @@ SvelteComponent.prototype.set = function set(newState) {
 	if (this._fragment) this._fragment.update(newState, this._state);
 	dispatchObservers(this, this._observers.post, newState, oldState);
 
-	while (this._renderHooks.length) {
-		var hook = this._renderHooks.pop();
-		hook.fn.call(hook.context);
-	}
+	this._flush();
 };
 
 SvelteComponent.prototype.teardown = function teardown(detach) {
@@ -2729,11 +2877,11 @@ function removeEventListener(node, event, handler) {
 
 function noop() {}
 
-/* harmony default export */ exports["a"] = SvelteComponent;
+/* harmony default export */ __webpack_exports__["a"] = SvelteComponent;
 
-/***/ },
+/***/ }),
 /* 12 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -2870,6 +3018,20 @@ SvelteComponent.prototype.on = function on(eventName, handler) {
 };
 
 SvelteComponent.prototype.set = function set(newState) {
+	this._set(newState);
+	(this._root || this)._flush();
+};
+
+SvelteComponent.prototype._flush = function _flush() {
+	if (!this._renderHooks) return;
+
+	while (this._renderHooks.length) {
+		var hook = this._renderHooks.pop();
+		hook.fn.call(hook.context);
+	}
+};
+
+SvelteComponent.prototype._set = function _set(newState) {
 	var oldState = this._state;
 	this._state = Object.assign({}, oldState, newState);
 
@@ -2934,11 +3096,11 @@ function appendNode(node, target) {
 	target.appendChild(node);
 }
 
-/* harmony default export */ exports["a"] = SvelteComponent;
+/* harmony default export */ __webpack_exports__["a"] = SvelteComponent;
 
-/***/ },
+/***/ }),
 /* 13 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -3072,6 +3234,20 @@ SvelteComponent.prototype.on = function on(eventName, handler) {
 };
 
 SvelteComponent.prototype.set = function set(newState) {
+	this._set(newState);
+	(this._root || this)._flush();
+};
+
+SvelteComponent.prototype._flush = function _flush() {
+	if (!this._renderHooks) return;
+
+	while (this._renderHooks.length) {
+		var hook = this._renderHooks.pop();
+		hook.fn.call(hook.context);
+	}
+};
+
+SvelteComponent.prototype._set = function _set(newState) {
 	var oldState = this._state;
 	this._state = Object.assign({}, oldState, newState);
 
@@ -3140,11 +3316,11 @@ function appendNode(node, target) {
 	target.appendChild(node);
 }
 
-/* harmony default export */ exports["a"] = SvelteComponent;
+/* harmony default export */ __webpack_exports__["a"] = SvelteComponent;
 
-/***/ },
+/***/ }),
 /* 14 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -3316,6 +3492,20 @@ SvelteComponent.prototype.on = function on(eventName, handler) {
 };
 
 SvelteComponent.prototype.set = function set(newState) {
+	this._set(newState);
+	(this._root || this)._flush();
+};
+
+SvelteComponent.prototype._flush = function _flush() {
+	if (!this._renderHooks) return;
+
+	while (this._renderHooks.length) {
+		var hook = this._renderHooks.pop();
+		hook.fn.call(hook.context);
+	}
+};
+
+SvelteComponent.prototype._set = function _set(newState) {
 	var oldState = this._state;
 	this._state = Object.assign({}, oldState, newState);
 
@@ -3388,14 +3578,14 @@ function removeEventListener(node, event, handler) {
 	node.removeEventListener(event, handler, false);
 }
 
-/* harmony default export */ exports["a"] = SvelteComponent;
+/* harmony default export */ __webpack_exports__["a"] = SvelteComponent;
 
-/***/ },
+/***/ }),
 /* 15 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 module.exports = __webpack_require__(0);
 
 
-/***/ }
+/***/ })
 /******/ ]);

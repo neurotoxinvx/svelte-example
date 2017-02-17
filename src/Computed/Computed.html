@@ -15,6 +15,13 @@
       hour: date => date.getHours(),
       minutes: date => date.getMinutes(),
       seconds: date => date.getSeconds()
+    },
+    onrender() {
+      window.setInterval(() => {
+        this.set({
+          date: new Date()
+        })
+      }, 1000)
     }
   }
 </script>

@@ -21,13 +21,13 @@ module.exports = {
       {
         test: /\.(html|js)$/,
         exclude: /node_modules/,
-        use: 'babel-loader',
-        query: babelSettings
+        loader: 'babel-loader',
+        options: babelSettings
       },
       {
         test: /\.html$/,
         exclude: /node_modules/,
-        use: 'svelte-loader'
+        loader: 'svelte-loader'
       }
     ]
   },
